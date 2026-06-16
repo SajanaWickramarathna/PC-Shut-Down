@@ -1,0 +1,12 @@
+{
+  "name": "pc-remote-control",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "start:desktop": "npm start --workspace=apps/desktop",
+    "start:mobile": "npm start --workspace=apps/mobile"
+  }
+}
