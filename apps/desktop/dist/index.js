@@ -9,6 +9,16 @@ const controllers_1 = require("./controllers");
 const systray2_1 = __importDefault(require("systray2"));
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const child_process_1 = require("child_process");
+if (!process.argv.includes('--daemon')) {
+    const child = (0, child_process_1.spawn)(process.execPath, process.argv.slice(1).concat(['--daemon']), {
+        detached: true,
+        stdio: 'ignore',
+        windowsHide: true
+    });
+    child.unref();
+    process.exit(0);
+}
 const config_1 = require("./config");
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3000;
@@ -88,7 +98,7 @@ app.listen(PORT, () => {
                 if (iface) {
                     for (let i = 0; i < iface.length; i++) {
                         const alias = iface[i];
-                        if (alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal) {
+                        if ((alias.family === 'IPv4' || alias.family === 4) && alias.address !== '127.0.0.1' && !alias.internal) {
                             ips.push(alias.address);
                         }
                     }

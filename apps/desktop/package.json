@@ -2,31 +2,47 @@
   "name": "desktop",
   "version": "1.0.0",
   "description": "PC Remote Control Desktop Service",
-  "main": "dist/index.js",
-  "bin": "dist/index.js",
-  "pkg": {
-    "assets": [
+  "main": "dist/main.js",
+  "build": {
+    "appId": "com.powertap.desktop",
+    "productName": "PowerTap",
+    "electronVersion": "42.4.1",
+    "files": [
+      "dist/**/*",
+      "public/**/*",
       "assets/**/*",
-      "../../node_modules/systray2/traybin/**/*"
-    ]
+      "package.json"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "../mobile/assets/appIcon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "runAfterFinish": true
+    }
   },
   "scripts": {
-    "start": "node dist/index.js",
-    "dev": "ts-node src/index.js",
+    "start": "electron dist/main.js",
+    "dev": "tsc && electron dist/main.js",
     "build": "tsc",
-    "build:exe": "tsc && pkg . --targets node18-win-x64 --output dist/PowerTap.exe"
+    "build:exe": "tsc && electron-builder build --win"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "systray2": "^2.1.4"
+    "express": "^4.19.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/node": "^20.12.7",
-    "pkg": "^5.8.1",
+    "electron": "^42.4.1",
+    "electron-builder": "^26.15.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
   }

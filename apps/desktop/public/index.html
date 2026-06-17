@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PowerTap Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-container">
+                <div class="logo"></div>
+                <h1>PowerTap</h1>
+            </div>
+            <div class="status-badge">
+                <span class="status-dot"></span>
+                Online
+            </div>
+        </header>
+
+        <main>
+            <div class="card">
+                <h2>Connection Details</h2>
+                <p class="subtitle">Enter these details into your PowerTap mobile app to pair your devices.</p>
+                
+                <div class="info-row">
+                    <div class="info-label">Local IP Address</div>
+                    <div class="info-value" id="ip-address">Loading...</div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-label">Port</div>
+                    <div class="info-value" id="port-number">3000</div>
+                </div>
+
+                <div class="info-row highlight">
+                    <div class="info-label">API Key (PIN)</div>
+                    <div class="api-key-container">
+                        <div class="info-value secret" id="api-key">------</div>
+                        <button id="reset-btn" class="btn">Generate New Key</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="instructions">
+                <h3>How to use:</h3>
+                <ol>
+                    <li>Ensure your phone and PC are on the same Wi-Fi network.</li>
+                    <li>Open the PowerTap app on your phone and go to Settings.</li>
+                    <li>Type in the IP Address and API Key shown above.</li>
+                    <li>Tap Save. You can now remotely control this PC!</li>
+                </ol>
+            </div>
+        </main>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>
