@@ -1,21 +1,21 @@
 import axios from 'axios';
-import { getSettings } from '../store/settings';
+import { getActiveProfile } from '../store/settings';
 
 export const createApiClient = async () => {
-  const { ipAddress, apiKey } = await getSettings();
+  const profile = await getActiveProfile();
 
-  if (!ipAddress) {
-    throw new Error('IP Address not configured');
+  if (!profile || !profile.ipAddress) {
+    throw new Error('No active PC profile found or IP Address not configured');
   }
 
   // Use http:// by default if not specified
-  const baseURL = ipAddress.startsWith('http') ? ipAddress : `http://${ipAddress}:3000`;
+  const baseURL = profile.ipAddress.startsWith('http') ? profile.ipAddress : `http://${profile.ipAddress}:3000`;
 
   return axios.create({
     baseURL,
     timeout: 5000,
     headers: {
-      'x-api-key': apiKey || '',
+      'x-api-key': profile.apiKey || '',
       'Content-Type': 'application/json',
     },
   });

@@ -76,6 +76,29 @@ app.listen(PORT, () => {
       iconData = fs.readFileSync(iconPath).toString('base64');
     }
 
+    // Get Local IP Addresses
+    const os = require('os');
+    const interfaces = os.networkInterfaces();
+    const ips: string[] = [];
+    for (const devName in interfaces) {
+      const iface = interfaces[devName];
+      if (iface) {
+        for (let i = 0; i < iface.length; i++) {
+          const alias = iface[i];
+          if (alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal) {
+            ips.push(alias.address);
+          }
+        }
+      }
+    }
+
+    const ipItems = ips.map(ip => ({
+      title: `IP: ${ip}`,
+      tooltip: 'Your Local IP Address (Type this in the mobile app)',
+      checked: false,
+      enabled: false
+    }));
+
     const systray = new SysTray({
       menu: {
         icon: iconData,
@@ -83,7 +106,14 @@ app.listen(PORT, () => {
         tooltip: `PC Remote Service (Port: ${PORT})`,
         items: [
           {
-            title: `Status: Online (Port ${PORT})`,
+            title: `Status: Online`,
+            tooltip: '',
+            checked: false,
+            enabled: false
+          },
+          ...ipItems,
+          {
+            title: '---',
             tooltip: '',
             checked: false,
             enabled: false

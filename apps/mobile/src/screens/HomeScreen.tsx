@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Alert, SafeAreaView, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, Alert, SafeAreaView, ScrollView, TouchableOpacity, RefreshControl, useColorScheme } from 'react-native';
 import { checkStatus, executeAction } from '../api/client';
+import { getActiveProfile, PCProfile } from '../store/settings';
 import { ActionCard } from '../components/ActionCard';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -10,13 +11,27 @@ interface HomeScreenProps {
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSettings }) => {
   const [isOnline, setIsOnline] = useState<boolean | null>(null);
+  const [activeProfile, setActiveProfile] = useState<PCProfile | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
+  const isDark = useColorScheme() === 'dark';
+  const bgColor = isDark ? '#121212' : '#F5F7FA';
+  const textColor = isDark ? '#FFFFFF' : '#1A1A1A';
+  const settingsBg = isDark ? '#333333' : '#EAECEF';
+  const iconColor = isDark ? '#DDDDDD' : '#555';
+
   const fetchStatus = useCallback(async () => {
     try {
-      const result = await checkStatus();
-      setIsOnline(result.status === 'online');
+      const profile = await getActiveProfile();
+      setActiveProfile(profile);
+      
+      if (profile) {
+        const result = await checkStatus();
+        setIsOnline(result.status === 'online');
+      } else {
+        setIsOnline(false);
+      }
     } catch (e) {
       setIsOnline(false);
     }
@@ -45,6 +60,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSettings }) 
           text: 'Yes', 
           style: 'destructive',
           onPress: async () => {
+            if (!activeProfile) {
+              Alert.alert('No PC Selected', 'Please configure a PC in Settings first.');
+              return;
+            }
             setLoadingAction(action);
             try {
               await executeAction(action);
@@ -61,17 +80,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSettings }) 
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: bgColor }]}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>PC Remote</Text>
+        <View style={styles.headerTitleContainer}>
+          <Text style={[styles.headerTitle, { color: textColor }]} numberOfLines={1}>
+            {activeProfile ? activeProfile.name : 'No PC Selected'}
+          </Text>
           <View style={styles.statusContainer}>
             <View style={[styles.statusDot, { backgroundColor: isOnline ? '#4CAF50' : '#F44336' }]} />
-            <Text style={styles.statusText}>{isOnline ? 'PC is Online' : 'PC is Offline'}</Text>
+            <Text style={styles.statusText}>
+              {activeProfile ? (isOnline ? 'Online' : 'Offline') : 'Go to Settings to add a PC'}
+            </Text>
           </View>
         </View>
-        <TouchableOpacity onPress={onNavigateToSettings} style={styles.settingsButton}>
-          <MaterialCommunityIcons name="cog" size={28} color="#555" />
+        <TouchableOpacity onPress={onNavigateToSettings} style={[styles.settingsButton, { backgroundColor: settingsBg }]}>
+          <MaterialCommunityIcons name="cog" size={28} color={iconColor} />
         </TouchableOpacity>
       </View>
 
@@ -115,7 +138,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSettings }) 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA',
   },
   header: {
     flexDirection: 'row',
@@ -125,10 +147,13 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     paddingBottom: 16,
   },
+  headerTitleContainer: {
+    flex: 1,
+    paddingRight: 16,
+  },
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#1A1A1A',
   },
   statusContainer: {
     flexDirection: 'row',
@@ -148,7 +173,6 @@ const styles = StyleSheet.create({
   },
   settingsButton: {
     padding: 8,
-    backgroundColor: '#EAECEF',
     borderRadius: 12,
   },
   scrollContent: {

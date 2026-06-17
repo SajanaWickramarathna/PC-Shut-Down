@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, View, ActivityIndicator } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, View, ActivityIndicator, useColorScheme } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 interface ActionCardProps {
@@ -11,18 +11,22 @@ interface ActionCardProps {
 }
 
 export const ActionCard: React.FC<ActionCardProps> = ({ title, iconName, color, onPress, isLoading }) => {
+  const isDark = useColorScheme() === 'dark';
+  const cardBg = isDark ? '#1E1E1E' : '#fff';
+  const textColor = isDark ? '#EEE' : '#333';
+
   return (
     <TouchableOpacity 
-      style={[styles.card, { borderLeftColor: color }]} 
+      style={[styles.card, { borderLeftColor: color, backgroundColor: cardBg }]} 
       onPress={onPress} 
       activeOpacity={0.7}
       disabled={isLoading}
     >
-      <View style={[styles.iconContainer, { backgroundColor: `${color}15` }]}>
+      <View style={[styles.iconContainer, { backgroundColor: `${color}25` }]}>
         <MaterialCommunityIcons name={iconName} size={32} color={color} />
       </View>
       <View style={styles.textContainer}>
-        <Text style={styles.title}>{title}</Text>
+        <Text style={[styles.title, { color: textColor }]}>{title}</Text>
       </View>
       {isLoading && (
         <View style={styles.loaderContainer}>
@@ -37,7 +41,6 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
@@ -62,7 +65,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
   },
   loaderContainer: {
     marginLeft: 16,
