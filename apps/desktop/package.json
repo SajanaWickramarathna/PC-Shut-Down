@@ -14,7 +14,7 @@
       "package.json"
     ],
     "directories": {
-      "output": "release"
+      "output": "release2"
     },
     "win": {
       "target": "nsis",
