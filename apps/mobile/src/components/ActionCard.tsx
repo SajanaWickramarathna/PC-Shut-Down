@@ -1,6 +1,7 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, View, ActivityIndicator, useColorScheme } from 'react-native';
+import { Text, StyleSheet, View, ActivityIndicator, Pressable } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useAppTheme } from '../theme';
 
 interface ActionCardProps {
   title: string;
@@ -11,62 +12,67 @@ interface ActionCardProps {
 }
 
 export const ActionCard: React.FC<ActionCardProps> = ({ title, iconName, color, onPress, isLoading }) => {
-  const isDark = useColorScheme() === 'dark';
-  const cardBg = isDark ? '#1E1E1E' : '#fff';
-  const textColor = isDark ? '#EEE' : '#333';
+  const { colors } = useAppTheme();
 
   return (
-    <TouchableOpacity 
-      style={[styles.card, { borderLeftColor: color, backgroundColor: cardBg }]} 
-      onPress={onPress} 
-      activeOpacity={0.7}
+    <Pressable
+      onPress={onPress}
       disabled={isLoading}
+      style={({ pressed }) => [
+        styles.card,
+        { backgroundColor: colors.surface },
+        pressed && { transform: [{ scale: 0.96 }], opacity: 0.9 },
+      ]}
     >
-      <View style={[styles.iconContainer, { backgroundColor: `${color}25` }]}>
-        <MaterialCommunityIcons name={iconName} size={32} color={color} />
+      <View style={[styles.iconContainer, { backgroundColor: `${color}15` }]}>
+        <MaterialCommunityIcons name={iconName} size={36} color={color} />
       </View>
-      <View style={styles.textContainer}>
-        <Text style={[styles.title, { color: textColor }]}>{title}</Text>
-      </View>
+      <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+      
       {isLoading && (
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="small" color={color} />
+        <View style={styles.loaderOverlay}>
+          <ActivityIndicator size="large" color={color} />
         </View>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: 'row',
+    flex: 1,
+    margin: 8,
+    borderRadius: 24,
+    padding: 24,
     alignItems: 'center',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
-    borderLeftWidth: 4,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.04,
+    shadowRadius: 16,
+    elevation: 4,
+    minHeight: 140,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.02)',
   },
   iconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
-  },
-  textContainer: {
-    flex: 1,
+    marginBottom: 16,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
+    textAlign: 'center',
   },
-  loaderContainer: {
-    marginLeft: 16,
+  loaderOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

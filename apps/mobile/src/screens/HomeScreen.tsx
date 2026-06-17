@@ -1,25 +1,26 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Alert, SafeAreaView, ScrollView, TouchableOpacity, RefreshControl, useColorScheme } from 'react-native';
+import { View, Text, StyleSheet, Alert, SafeAreaView, TouchableOpacity, RefreshControl, FlatList } from 'react-native';
 import { checkStatus, executeAction } from '../api/client';
 import { getActiveProfile, PCProfile } from '../store/settings';
 import { ActionCard } from '../components/ActionCard';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useAppTheme } from '../theme';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../App';
+
+type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
 interface HomeScreenProps {
-  onNavigateToSettings: () => void;
+  navigation: HomeScreenNavigationProp;
 }
 
-export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSettings }) => {
+export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [isOnline, setIsOnline] = useState<boolean | null>(null);
   const [activeProfile, setActiveProfile] = useState<PCProfile | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
-
-  const isDark = useColorScheme() === 'dark';
-  const bgColor = isDark ? '#121212' : '#F5F7FA';
-  const textColor = isDark ? '#FFFFFF' : '#1A1A1A';
-  const settingsBg = isDark ? '#333333' : '#EAECEF';
-  const iconColor = isDark ? '#DDDDDD' : '#555';
+  
+  const { colors } = useAppTheme();
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -38,11 +39,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSettings }) 
   }, []);
 
   useEffect(() => {
-    fetchStatus();
-    // Poll every 10 seconds
+    // Fetch immediately on mount, and whenever returning to this screen
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchStatus();
+    });
+
     const interval = setInterval(fetchStatus, 10000);
-    return () => clearInterval(interval);
-  }, [fetchStatus]);
+    return () => {
+      clearInterval(interval);
+      unsubscribe();
+    };
+  }, [navigation, fetchStatus]);
 
   const onRefresh = async () => {
     setIsRefreshing(true);
@@ -79,58 +86,51 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSettings }) 
     );
   };
 
+  const actions: { id: 'shutdown' | 'restart' | 'lock' | 'sleep', title: string, icon: any, color: string }[] = [
+    { id: 'shutdown', title: 'Shutdown', icon: 'power', color: colors.error },
+    { id: 'restart', title: 'Restart', icon: 'restart', color: colors.warning },
+    { id: 'lock', title: 'Lock', icon: 'lock', color: colors.primary },
+    { id: 'sleep', title: 'Sleep', icon: 'sleep', color: '#9C27B0' },
+  ];
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: bgColor }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <View style={styles.headerTitleContainer}>
-          <Text style={[styles.headerTitle, { color: textColor }]} numberOfLines={1}>
+          <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
             {activeProfile ? activeProfile.name : 'No PC Selected'}
           </Text>
           <View style={styles.statusContainer}>
-            <View style={[styles.statusDot, { backgroundColor: isOnline ? '#4CAF50' : '#F44336' }]} />
-            <Text style={styles.statusText}>
-              {activeProfile ? (isOnline ? 'Online' : 'Offline') : 'Go to Settings to add a PC'}
+            <View style={[styles.statusDot, { backgroundColor: activeProfile ? (isOnline ? colors.success : colors.error) : colors.textSecondary }]} />
+            <Text style={[styles.statusText, { color: colors.textSecondary }]}>
+              {activeProfile ? (isOnline ? 'Online' : 'Offline') : 'Tap gear to add PC'}
             </Text>
           </View>
         </View>
-        <TouchableOpacity onPress={onNavigateToSettings} style={[styles.settingsButton, { backgroundColor: settingsBg }]}>
-          <MaterialCommunityIcons name="cog" size={28} color={iconColor} />
+        <TouchableOpacity 
+          onPress={() => navigation.navigate('Settings')} 
+          style={[styles.settingsButton, { backgroundColor: colors.surface }]}
+        >
+          <MaterialCommunityIcons name="cog" size={28} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />}
-      >
-        <ActionCard
-          title="Shutdown"
-          iconName="power"
-          color="#F44336"
-          onPress={() => handleAction('shutdown', 'Shutdown')}
-          isLoading={loadingAction === 'shutdown'}
-        />
-        <ActionCard
-          title="Restart"
-          iconName="restart"
-          color="#FF9800"
-          onPress={() => handleAction('restart', 'Restart')}
-          isLoading={loadingAction === 'restart'}
-        />
-        <ActionCard
-          title="Lock"
-          iconName="lock"
-          color="#2196F3"
-          onPress={() => handleAction('lock', 'Lock')}
-          isLoading={loadingAction === 'lock'}
-        />
-        <ActionCard
-          title="Sleep"
-          iconName="sleep"
-          color="#9C27B0"
-          onPress={() => handleAction('sleep', 'Sleep')}
-          isLoading={loadingAction === 'sleep'}
-        />
-      </ScrollView>
+      <FlatList
+        data={actions}
+        keyExtractor={(item) => item.id}
+        numColumns={2}
+        contentContainerStyle={styles.gridContent}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+        renderItem={({ item }) => (
+          <ActionCard
+            title={item.title}
+            iconName={item.icon}
+            color={item.color}
+            onPress={() => handleAction(item.id, item.title)}
+            isLoading={loadingAction === item.id}
+          />
+        )}
+      />
     </SafeAreaView>
   );
 };
@@ -144,38 +144,48 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 16,
+    paddingTop: 32,
+    paddingBottom: 24,
   },
   headerTitleContainer: {
     flex: 1,
     paddingRight: 16,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 32,
+    fontWeight: '800',
+    letterSpacing: -0.5,
   },
   statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 6,
+    backgroundColor: 'rgba(0,0,0,0.04)',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   statusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     marginRight: 6,
   },
   statusText: {
     fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   settingsButton: {
-    padding: 8,
-    borderRadius: 12,
+    padding: 12,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  scrollContent: {
-    padding: 24,
+  gridContent: {
+    padding: 16,
   },
 });
