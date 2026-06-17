@@ -1,6 +1,6 @@
 {
   "name": "desktop",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "PC Remote Control Desktop Service",
   "main": "dist/main.js",
   "build": {
@@ -35,7 +35,8 @@
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "firebase": "^12.15.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

@@ -1,34 +1,43 @@
-import axios from 'axios';
+import { ref, set, get, onValue, off } from 'firebase/database';
+import { database } from './firebaseConfig';
 import { getActiveProfile } from '../store/settings';
 
-export const createApiClient = async () => {
+export const checkStatus = async (): Promise<{ status: string }> => {
   const profile = await getActiveProfile();
-
-  if (!profile || !profile.ipAddress) {
-    throw new Error('No active PC profile found or IP Address not configured');
+  if (!profile || !profile.apiKey) {
+    throw new Error('No active PC profile found or API Key not configured');
   }
 
-  // Use http:// by default if not specified
-  const baseURL = profile.ipAddress.startsWith('http') ? profile.ipAddress : `http://${profile.ipAddress}:3000`;
+  const statusRef = ref(database, `pcs/${profile.apiKey}/status`);
+  const snapshot = await get(statusRef);
+  const status = snapshot.val();
 
-  return axios.create({
-    baseURL,
-    timeout: 5000,
-    headers: {
-      'x-api-key': profile.apiKey || '',
-      'Content-Type': 'application/json',
-    },
-  });
+  return { status: status || 'offline' };
 };
 
-export const checkStatus = async () => {
-  const client = await createApiClient();
-  const response = await client.get('/status');
-  return response.data;
+export const subscribeToStatus = async (callback: (status: string) => void) => {
+  const profile = await getActiveProfile();
+  if (!profile || !profile.apiKey) return () => {};
+
+  const statusRef = ref(database, `pcs/${profile.apiKey}/status`);
+  onValue(statusRef, (snapshot) => {
+    callback(snapshot.val() || 'offline');
+  });
+
+  return () => off(statusRef);
 };
 
 export const executeAction = async (action: 'shutdown' | 'restart' | 'lock' | 'sleep') => {
-  const client = await createApiClient();
-  const response = await client.post(`/${action}`);
-  return response.data;
+  const profile = await getActiveProfile();
+  if (!profile || !profile.apiKey) {
+    throw new Error('No active PC profile found or API Key not configured');
+  }
+
+  const commandRef = ref(database, `pcs/${profile.apiKey}/command`);
+  await set(commandRef, {
+    action,
+    timestamp: Date.now()
+  });
+
+  return { message: `${action} command sent to PC via Firebase!` };
 };

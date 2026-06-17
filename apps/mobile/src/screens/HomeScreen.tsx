@@ -27,10 +27,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       const profile = await getActiveProfile();
       setActiveProfile(profile);
       
-      if (profile) {
-        const result = await checkStatus();
-        setIsOnline(result.status === 'online');
-      } else {
+      if (!profile) {
         setIsOnline(false);
       }
     } catch (e) {
@@ -39,15 +36,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   }, []);
 
   useEffect(() => {
-    // Fetch immediately on mount, and whenever returning to this screen
-    const unsubscribe = navigation.addListener('focus', () => {
+    fetchStatus();
+    
+    let unsubscribeStatus = () => {};
+    const setupSubscription = async () => {
+      const { subscribeToStatus } = await import('../api/client');
+      unsubscribeStatus = await subscribeToStatus((status) => {
+        setIsOnline(status === 'online');
+      });
+    };
+    setupSubscription();
+
+    const unsubscribeFocus = navigation.addListener('focus', () => {
       fetchStatus();
+      setupSubscription();
     });
 
-    const interval = setInterval(fetchStatus, 10000);
     return () => {
-      clearInterval(interval);
-      unsubscribe();
+      unsubscribeStatus();
+      unsubscribeFocus();
     };
   }, [navigation, fetchStatus]);
 

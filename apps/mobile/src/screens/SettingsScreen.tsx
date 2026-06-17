@@ -70,14 +70,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
   };
 
   const handleSave = async () => {
-    if (!name.trim() || !ipAddress.trim() || !apiKey.trim()) {
+    if (!name.trim() || !apiKey.trim()) {
       Alert.alert('Validation Error', 'Please fill in all fields.');
       return;
     }
     await addOrUpdateProfile({
       id: editId || undefined,
       name: name.trim(),
-      ipAddress: ipAddress.trim(),
+      ipAddress: 'cloud', // Keep for type compat
       apiKey: apiKey.trim(),
     });
     
@@ -168,22 +168,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>PC IP Address</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
-                placeholder="e.g. 192.168.1.5"
-                placeholderTextColor={colors.textSecondary}
-                value={ipAddress}
-                onChangeText={setIpAddress}
-                keyboardType="numbers-and-punctuation"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-              <Text style={[styles.hint, { color: colors.textSecondary }]}>Click the PowerTap icon in your Windows system tray to see your IP.</Text>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>API Key</Text>
+              <Text style={[styles.label, { color: colors.text }]}>API Key (Connection ID)</Text>
               <TextInput
                 style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
                 placeholder="Your Secret API Key"
@@ -194,7 +179,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
                 autoCapitalize="none"
                 autoCorrect={false}
               />
-              <Text style={[styles.hint, { color: colors.textSecondary }]}>Must match the API_KEY shown in your desktop app.</Text>
+              <Text style={[styles.hint, { color: colors.textSecondary }]}>Must match the API_KEY shown in your desktop app to connect globally.</Text>
             </View>
 
             <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary }]} onPress={handleSave} activeOpacity={0.8}>

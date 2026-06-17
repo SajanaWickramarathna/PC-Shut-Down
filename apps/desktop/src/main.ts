@@ -10,65 +10,42 @@ let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let isQuitting = false;
 
-// EXPRESS SERVER SETUP
-const expressApp = express();
-const PORT = process.env.PORT || 3000;
+import { ref, onValue, set, onDisconnect } from "firebase/database";
+import { database } from "./firebaseConfig";
+
+// FIREBASE SETUP
 let API_KEY = getConfig().apiKey;
 
-expressApp.use(cors());
-expressApp.use(express.json());
+function setupFirebaseListener() {
+  const pcStatusRef = ref(database, `pcs/${API_KEY}/status`);
+  const pcCommandRef = ref(database, `pcs/${API_KEY}/command`);
 
-const authenticate = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  const apiKey = req.headers['x-api-key'];
-  if (!apiKey || apiKey !== API_KEY) {
-    return res.status(401).json({ error: 'Unauthorized: Invalid API Key' });
-  }
-  next();
-};
+  // Set status to online and handle disconnect
+  set(pcStatusRef, 'online');
+  onDisconnect(pcStatusRef).set('offline');
 
-expressApp.get('/status', authenticate, (req, res) => {
-  res.json({ status: 'online', message: 'PC is online and reachable.' });
-});
+  // Listen for commands
+  onValue(pcCommandRef, async (snapshot) => {
+    const data = snapshot.val();
+    if (data && data.action) {
+      console.log(`Received command from Firebase: ${data.action}`);
+      try {
+        switch (data.action) {
+          case 'shutdown': await shutdownPC(); break;
+          case 'restart': await restartPC(); break;
+          case 'lock': await lockPC(); break;
+          case 'sleep': await sleepPC(); break;
+        }
+        // Clear the command after executing
+        await set(pcCommandRef, null);
+      } catch (error) {
+        console.error(`Failed to execute ${data.action}:`, error);
+      }
+    }
+  });
+}
 
-expressApp.post('/shutdown', authenticate, async (req, res) => {
-  try {
-    await shutdownPC();
-    res.json({ message: 'Shutting down PC...' });
-  } catch (error: any) {
-    res.status(500).json({ error: 'Failed to shutdown PC', details: error.message });
-  }
-});
-
-expressApp.post('/restart', authenticate, async (req, res) => {
-  try {
-    await restartPC();
-    res.json({ message: 'Restarting PC...' });
-  } catch (error: any) {
-    res.status(500).json({ error: 'Failed to restart PC', details: error.message });
-  }
-});
-
-expressApp.post('/lock', authenticate, async (req, res) => {
-  try {
-    await lockPC();
-    res.json({ message: 'Locking PC...' });
-  } catch (error: any) {
-    res.status(500).json({ error: 'Failed to lock PC', details: error.message });
-  }
-});
-
-expressApp.post('/sleep', authenticate, async (req, res) => {
-  try {
-    await sleepPC();
-    res.json({ message: 'Putting PC to sleep...' });
-  } catch (error: any) {
-    res.status(500).json({ error: 'Failed to sleep PC', details: error.message });
-  }
-});
-
-expressApp.listen(PORT, () => {
-  console.log(`Desktop Service running on port ${PORT}`);
-});
+setupFirebaseListener();
 
 // GET LOCAL IP
 function getLocalIP(): string {
@@ -109,7 +86,7 @@ if (!gotTheLock) {
     ipcMain.handle('get-info', () => ({
       apiKey: API_KEY,
       ip: getLocalIP(),
-      port: PORT
+      port: 0
     }));
 
     ipcMain.handle('reset-api-key', () => {
