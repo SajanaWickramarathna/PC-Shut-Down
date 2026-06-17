@@ -2,7 +2,7 @@
   "expo": {
     "name": "Power Tap",
     "slug": "mobile",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/appIcon.png",
     "userInterfaceStyle": "automatic",
@@ -10,6 +10,7 @@
       "supportsTablet": true
     },
     "android": {
+      "versionCode": 3,
       "package": "com.pcremote.app",
       "usesCleartextTraffic": true,
       "adaptiveIcon": {
@@ -20,6 +21,16 @@
     },
     "web": {
       "favicon": "./assets/appIcon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ]
   }
 }

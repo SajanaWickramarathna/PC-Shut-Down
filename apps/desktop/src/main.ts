@@ -117,6 +117,12 @@ if (!gotTheLock) {
       return API_KEY;
     });
 
+    // Auto-start on system boot
+    app.setLoginItemSettings({
+      openAtLogin: true,
+      openAsHidden: true
+    });
+
     app.on('activate', function () {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
