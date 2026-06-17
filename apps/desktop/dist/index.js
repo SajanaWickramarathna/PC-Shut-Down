@@ -68,7 +68,7 @@ app.listen(PORT, () => {
     console.log(`Local API Key configured: ${API_KEY}`);
     // Setup System Tray
     try {
-        const iconPath = path_1.default.join(__dirname, '../assets/icon.ico');
+        const iconPath = path_1.default.resolve(__dirname, '../assets/icon.ico');
         let iconData = '';
         if (fs_1.default.existsSync(iconPath)) {
             iconData = fs_1.default.readFileSync(iconPath).toString('base64');

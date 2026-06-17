@@ -70,7 +70,7 @@ app.listen(PORT, () => {
 
   // Setup System Tray
   try {
-    const iconPath = path.join(__dirname, '../assets/icon.ico');
+    const iconPath = path.resolve(__dirname, '../assets/icon.ico');
     let iconData = '';
     if (fs.existsSync(iconPath)) {
       iconData = fs.readFileSync(iconPath).toString('base64');

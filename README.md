@@ -44,7 +44,31 @@ The standalone Android app has already been built. You can find the installable 
 1. Transfer the `app-release.apk` file to your Android phone (via USB cable, Google Drive, or Email).
 2. Open the file on your phone to install it. *(You may need to allow "Install from unknown sources" in your Android settings if prompted).*
 
-### 3. Configure the Connection
+### 3. Manually Building the APK (Optional)
+If you modify the mobile app code and need to generate a new APK yourself, you can build it locally without using cloud services:
+1. Ensure you have the **Java JDK** and **Android SDK** installed on your system.
+2. In the `apps/mobile/android` folder, ensure there is a `local.properties` file pointing to your Android SDK (e.g., `sdk.dir=C:/Users/YourName/AppData/Local/Android/Sdk`).
+3. Open a terminal and temporarily hide the monorepo configuration so the mobile bundler doesn't get confused:
+   ```cmd
+   rename package.json package.json.bak
+   cd apps/mobile
+   ```
+4. Regenerate the Android project:
+   ```cmd
+   npx expo prebuild
+   ```
+5. Build the Release APK:
+   ```cmd
+   cd android
+   .\gradlew assembleRelease
+   ```
+6. Restore your project configuration when finished:
+   ```cmd
+   cd ../../../
+   rename package.json.bak package.json
+   ```
+
+### 4. Configure the Connection
 1. Find your PC's local IP Address by opening a Windows Command Prompt and running `ipconfig` (Look for the `IPv4 Address` under your active Wi-Fi/Ethernet adapter, e.g., `192.168.1.5`).
 2. Open the **PC Remote** app on your phone.
 3. Tap the **Settings (gear)** icon in the top right.
