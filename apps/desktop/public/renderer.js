@@ -1,13 +1,9 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    const ipElement = document.getElementById('ip-address');
-    const portElement = document.getElementById('port-number');
     const keyElement = document.getElementById('api-key');
     const resetBtn = document.getElementById('reset-btn');
 
     // Fetch initial info
     const info = await window.api.getInfo();
-    ipElement.textContent = info.ip;
-    portElement.textContent = info.port;
     keyElement.textContent = info.apiKey;
 
     // Handle reset

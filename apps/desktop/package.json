@@ -1,6 +1,6 @@
 {
   "name": "desktop",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "PC Remote Control Desktop Service",
   "main": "dist/main.js",
   "build": {
@@ -11,7 +11,8 @@
       "dist/**/*",
       "public/**/*",
       "assets/**/*",
-      "package.json"
+      "package.json",
+      ".env"
     ],
     "directories": {
       "output": "release3"

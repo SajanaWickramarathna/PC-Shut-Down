@@ -3,6 +3,7 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, Aler
 import { getProfiles, addOrUpdateProfile, deleteProfile, getActiveProfileId, setActiveProfileId, PCProfile } from '../store/settings';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 
@@ -24,6 +25,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
   const [apiKey, setApiKey] = useState('');
 
   const { colors } = useAppTheme();
+  const insets = useSafeAreaInsets();
 
   const loadData = async () => {
     const loadedProfiles = await getProfiles();
@@ -132,7 +134,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
         style={styles.container} 
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {!isEditing ? (
+        <View style={{ flex: 1, paddingBottom: Math.max(insets.bottom, 16) }}>
+          {!isEditing ? (
           <View style={styles.content}>
             <Text style={[styles.description, { color: colors.textSecondary }]}>
               Manage your saved PCs. Tap a PC to set it as the active connection.
@@ -190,6 +193,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
             </TouchableOpacity>
           </View>
         )}
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -231,6 +235,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 16,
+    marginBottom: Platform.OS === 'android' ? 32 : 16,
     shadowColor: '#3b82f6',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
