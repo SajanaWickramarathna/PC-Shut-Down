@@ -1,16 +1,14 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import { shutdownPC, restartPC, lockPC, sleepPC } from './controllers';
 import SysTray from 'systray2';
 import fs from 'fs';
 import path from 'path';
-
-dotenv.config();
+import { getConfig, resetApiKey } from './config';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const API_KEY = process.env.API_KEY || 'default_secret_key';
+let API_KEY = getConfig().apiKey;
 
 app.use(cors());
 app.use(express.json());
@@ -68,9 +66,15 @@ app.listen(PORT, () => {
   console.log(`Desktop Service running on port ${PORT}`);
   console.log(`Local API Key configured: ${API_KEY}`);
 
-  // Setup System Tray
-  try {
-    const iconPath = path.resolve(__dirname, '../assets/icon.ico');
+  let systray: any = null;
+
+  const setupTray = () => {
+    try {
+      if (systray) {
+        try { systray.kill(false); } catch (e) {}
+      }
+
+      const iconPath = path.resolve(__dirname, '../assets/icon.ico');
     let iconData = '';
     if (fs.existsSync(iconPath)) {
       iconData = fs.readFileSync(iconPath).toString('base64');
@@ -99,15 +103,15 @@ app.listen(PORT, () => {
       enabled: false
     }));
 
-    const systray = new SysTray({
+    systray = new SysTray({
       menu: {
         icon: iconData,
-        title: 'PC Remote',
-        tooltip: `PC Remote Service (Port: ${PORT})`,
+        title: 'PowerTap',
+        tooltip: `PowerTap Service (Port: ${PORT})`,
         items: [
           {
-            title: `Status: Online`,
-            tooltip: '',
+            title: `API Key: ${API_KEY}`,
+            tooltip: 'Type this secret key in the mobile app',
             checked: false,
             enabled: false
           },
@@ -117,6 +121,12 @@ app.listen(PORT, () => {
             tooltip: '',
             checked: false,
             enabled: false
+          },
+          {
+            title: 'Reset API Key',
+            tooltip: 'Generate a new random 6-digit API key',
+            checked: false,
+            enabled: true
           },
           {
             title: 'Exit',
@@ -130,8 +140,11 @@ app.listen(PORT, () => {
       copyDir: true // copy binaries to a safe directory to avoid access issues
     });
 
-    systray.onClick(action => {
-      if (action.item.title === 'Exit') {
+    systray.onClick((action: any) => {
+      if (action.item.title === 'Reset API Key') {
+        API_KEY = resetApiKey().apiKey;
+        setupTray();
+      } else if (action.item.title === 'Exit') {
         systray.kill(false);
         process.exit(0);
       }
@@ -139,11 +152,14 @@ app.listen(PORT, () => {
 
     systray.ready().then(() => {
       console.log('System tray is ready.');
-    }).catch(err => {
+    }).catch((err: any) => {
       console.error('Failed to start system tray:', err);
     });
 
-  } catch (err) {
-    console.error('System tray initialization error:', err);
-  }
+    } catch (err) {
+      console.error('System tray initialization error:', err);
+    }
+  };
+
+  setupTray();
 });
