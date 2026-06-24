@@ -10,22 +10,45 @@ let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let isQuitting = false;
 
-import { ref, onValue, set, onDisconnect } from "firebase/database";
+import { ref, onValue, set, onDisconnect, off, Unsubscribe } from "firebase/database";
 import { database } from "./firebaseConfig";
 
 // FIREBASE SETUP
 let API_KEY = getConfig().apiKey;
 
+let unsubscribeConnected: Unsubscribe | null = null;
+let unsubscribeCommand: Unsubscribe | null = null;
+let currentStatusRef: any = null;
+
 function setupFirebaseListener() {
+  if (currentStatusRef) {
+    // Teardown old listeners
+    set(currentStatusRef, 'offline');
+    onDisconnect(currentStatusRef).cancel();
+    if (unsubscribeConnected) unsubscribeConnected();
+    if (unsubscribeCommand) unsubscribeCommand();
+  }
+
   const pcStatusRef = ref(database, `pcs/${API_KEY}/status`);
   const pcCommandRef = ref(database, `pcs/${API_KEY}/command`);
+  const connectedRef = ref(database, ".info/connected");
 
-  // Set status to online and handle disconnect
-  set(pcStatusRef, 'online');
-  onDisconnect(pcStatusRef).set('offline');
+  currentStatusRef = pcStatusRef;
+
+  unsubscribeConnected = onValue(connectedRef, (snap) => {
+    if (snap.val() === true) {
+      console.log("Connected to Firebase cloud!");
+      // Set up the disconnect hook first, then declare ourselves online
+      onDisconnect(pcStatusRef).set('offline').then(() => {
+        set(pcStatusRef, 'online');
+      });
+    } else {
+      console.log("Disconnected from Firebase cloud (network drop or sleep)...");
+    }
+  });
 
   // Listen for commands
-  onValue(pcCommandRef, async (snapshot) => {
+  unsubscribeCommand = onValue(pcCommandRef, async (snapshot) => {
     const data = snapshot.val();
     if (data && data.action) {
       console.log(`Received command from Firebase: ${data.action}`);
@@ -91,6 +114,7 @@ if (!gotTheLock) {
 
     ipcMain.handle('reset-api-key', () => {
       API_KEY = resetApiKey().apiKey;
+      setupFirebaseListener();
       return API_KEY;
     });
 
